@@ -19,7 +19,7 @@ class Bill:
         self.subtotal = subtotal
         self.tax = tax
         self.tip = tip 
-        
+        self.tipCost = self.subtotal * self.tip 
 
 # Item class
 class Item:
@@ -32,13 +32,13 @@ class Item:
 
 # Person class
 class Person:
-    def __init__(self, name, totalBill, tax, tip):
+    def __init__(self, name, bill):
         self.name = name 
         self.bill = 0
         self.order = {}
-        self.totalBill = totalBill
-        self.tax = tax
-        self.tip = tip
+        self.totalBill = bill.subtotal
+        self.tax = bill.tax
+        self.tip = bill.tipCost
         
     # def addItem(self, item, cost):
     #     self.bill += int(cost) 
@@ -53,21 +53,30 @@ class Person:
         
     def myPart(self):
         #self.percentage = self.bill / self.totalBill 
-        return self.bill / self.totalBill
+        self.part = self.bill / self.totalBill
     
-bill = Bill(31.12, 29.92, 1.28, .15)
+    def totalIt(self):
+        taxPart = self.part * self.tax 
+        tipPart = self.part * self.tip 
+        self.myTotal = self.bill + taxPart + tipPart
         
-p = Person("Bob", 100, 10, .1)
+    def final(self):
+        self.myPart()
+        self.totalIt()
+        print(f"{self.name}'s total is {round(self.myTotal, 2)}")
+    
+bill = Bill(31.12, 29.84, 1.28, .15)
+        
+#p = Person("Bob", 100, 10, .1)
+bob = Person("Bob", bill)
 fish = Item("fish", 10)
-chicken = Item("chicken", 20)
-p.addItem(fish)
-p.addItem(chicken)
-p.deleteItem(chicken)
-print(p.name)
-print(p.bill)
-print(p.totalBill)
-print(p.order)
-print(p.myPart())
+chicken = Item("chicken", 19.84)
+bob.addItem(fish)
+bob.final()
+dana = Person("Dana", bill)
+dana.addItem(chicken)
+dana.final()
+
         
 # Receipt class
 class Receipt:
