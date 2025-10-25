@@ -14,12 +14,12 @@
 
 # Bill class
 class Bill:
-    def __init__(self, subtotal, tax, tip):
+    def __init__(self, overall, subtotal, tax, tip):
+        self.overall = overall
         self.subtotal = subtotal
         self.tax = tax
         self.tip = tip 
         
-
 
 # Item class
 class Item:
@@ -32,11 +32,13 @@ class Item:
 
 # Person class
 class Person:
-    def __init__(self, name, totalBill):
+    def __init__(self, name, totalBill, tax, tip):
         self.name = name 
         self.bill = 0
         self.order = {}
         self.totalBill = totalBill
+        self.tax = tax
+        self.tip = tip
         
     # def addItem(self, item, cost):
     #     self.bill += int(cost) 
@@ -52,8 +54,10 @@ class Person:
     def myPart(self):
         #self.percentage = self.bill / self.totalBill 
         return self.bill / self.totalBill
+    
+bill = Bill(31.12, 29.92, 1.28, .15)
         
-p = Person("Bob", 100)
+p = Person("Bob", 100, 10, .1)
 fish = Item("fish", 10)
 chicken = Item("chicken", 20)
 p.addItem(fish)
