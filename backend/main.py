@@ -1,187 +1,81 @@
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from typing import List 
+from models.bill import Bill 
+from models.item import Item 
+from models.person import Person 
 
-# whoever is paying the bill takes a picture of the receipt, decide on tip amount
+app = FastAPI(title= "SplitIt API") 
 
-# parse receipt for information, assign each item to each person
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # later replace with frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# each individual person gets the price of their item added to their bill
+bills = {} 
+items = [] 
+people = []
 
-# calculate tip/tax and add to individual bills (based on percentage of subtotal)
+@app.get("/")
+def root():
+    return {"message": "SplitIt API running"}
 
-# send out bills through venmo - to be done when integrated with FastAPI
+@app.post("/upload-receipt")
+async def upload_receipt(file: UploadFile = File(...)):
+    mock_items = [
+        {"name": "Fish", "price": 10.0},
+        {"name": "Chicken", "price": 19.84}
+    ]
+    return {"items": mock_items}
 
-# cool frontend
+@app.post("/create-bill")
+async def create_bill(
+    overall: float = Form(...),
+    subtotal: float = Form(...),
+    tax: float = Form(...),
+    tip: float = Form(...)
+):
+    bill = Bill(overall, subtotal, tax, tip)
+    bills["current"] = bill
+    return {"message": "bill created", "tip_amount": bill.tipCost}
 
+@app.post("/add-people")
+async def add_people(names: List[str]):
+    if "current" not in bills:
+        return {"error": "No bill found"}
+    global people 
+    people = [Person(name, bills["current"]) for name in names]
+    return {"message": "people added successfully", "people": [p.name for p in people]}
 
-# Bill class
-class Bill:
-    def __init__(self, overall, subtotal, tax, tip):
-        self.overall = overall
-        self.subtotal = subtotal
-        self.tax = tax
-        self.tip = tip 
-        self.tipCost = self.subtotal * self.tip 
-
-# Item class
-class Item:
-    def __init__(self, name, price):
-        self.name = name 
-        self.price = price 
-    # def assign(self, name):
-    #     self.person = name
-        
-
-# Person class
-class Person:
-    def __init__(self, name, bill):
-        self.name = name 
-        self.bill = 0
-        self.order = {}
-        self.totalBill = bill.subtotal
-        self.tax = bill.tax
-        self.tip = bill.tipCost
-        
-    # def addItem(self, item, cost):
-    #     self.bill += int(cost) 
-    #     self.order[item] = cost
-    def addItem(self, item):
-        self.bill += item.price 
-        self.order[item.name] = item.price
-        
-    def deleteItem(self, item):
-        del self.order[item.name]
-        self.bill -= item.price
-        
-    def myPart(self):
-        #self.percentage = self.bill / self.totalBill 
-        self.part = self.bill / self.totalBill
-    
-    def totalIt(self):
-        taxPart = self.part * self.tax 
-        tipPart = self.part * self.tip 
-        self.myTotal = self.bill + taxPart + tipPart
-        
-    def final(self):
-        self.myPart()
-        self.totalIt()
-        print(f"{self.name}'s total is {round(self.myTotal, 2)}")
-        
-def send_items(items, people):
-    for item in items:
-        person = input(f"Who ordered the {item.name}? ")
-        match = next((p for p in people if p.name == person), None)
+@app.post("/assign-items")
+async def assign_items(assignments: List[dict]):
+    if not people:
+        return {"error": "no people found"}
+    for assignment in assignments:
+        person_name = assignment["person"]
+        item = Item(assignment["item"], float(assignment["price"]))
+        match = next((p for p in people if p.name == person_name), None)
         if match:
             match.addItem(item)
-        
-def final(people):
-    for person in people:
-        person.final()
-    
-bill = Bill(31.12, 29.84, 1.28, .15)
+    response = [
+        {"name": p.name, "subtotal": round(p.bill, 2)} for p in people
+    ]
+    return {"assigned": response}
 
-items = [Item("fish", 10), Item("chicken", 19.84)]
-
-people = [Person("Bob", bill), Person("Dana", bill)]
-
-send_items(items, people)
-final(people)
-
-
-# bob = Person("Bob", bill)
-# dana = Person("Dana", bill)
-
-# for item in items:
-#     person = input("Who ordered: ")
-#     match = next((p for p in people if p.name == person), None)
-#     if match:
-#         match.addItem(item)
-        
-# for person in people:
-#     person.final()
-
-#for item in items:
-
-        
-#p = Person("Bob", 100, 10, .1)
-#bob = Person("Bob", bill)
-#fish = Item("fish", 10)
-#chicken = Item("chicken", 19.84)
-#bob.addItem(fish)
-# bob.final()
-# dana = Person("Dana", bill)
-#dana.addItem(chicken)
-# dana.final()
-
-        
-# Receipt class
-class Receipt:
-    def __init__(self):
-        self.order = []
-        self.guests = {}
-        
-    def parse(self, receipt):
-        for item in receipt:
-            self.order.append(item)
-            
-    def findPeople(self):
-        num = input("How many guests?" )
-    
-
-
-
-
-# def calculateTip(total, percent):
-#     return total * percent 
-
-# def split(total, percentage):
-#     return total * percentage 
-
-# def findPercentage(total, items):
-#     individualCost = 0
-#     for item in items:
-#         individualCost += item 
-
-
-"""
-people = input("How many people in your party? ")
-val = 1
-ppl = []
-for i in range(int(people)):
-    person = Person("John")
-    ppl.append(person) 
-print(ppl)
-
-"""
-
-# go through each item in receipt, assign to person
-
-"""
-receipt = {"Fish": "30", "Chicken": "15", "Water": "20"}
-
-guests = {"Bob", "Dana", "Kim"}
-
-people = {}
-
-for guest in guests:
-    people[guest] = Person(guest)
-    
-allItems = []
-    
-for item, price in receipt.items():
-    curr = Item(item, price)
-    buy = input(f"Who ordered the {item}? " )
-    people[buy].addTo(item, price)
-    
-for person in people.values():
-    print(person.name)
-    print(person.bill)
-    print(person.order)
-    
-    
-    curr.assign(buy)
-    allItems.append(curr)
-    
-for item in allItems:
-    print(item.name)
-    print(item.person)
-    
-    """
+@app.get("/final-totals")
+def final_totals():
+    if not people:
+        return {"error": "no people"}
+    results = []
+    for p in people:
+        p.final()
+        results.append({
+            "name": p.name,
+            "items": list(p.order.keys()),
+            "subtotal": round(p.bill, 2),
+            "total_with_tax_tip": round(p.myTotal, 2)
+        })
+    return {"totals": results}
